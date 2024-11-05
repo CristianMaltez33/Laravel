@@ -1,0 +1,117 @@
+-- migración
+-- relaciones es la migraciones
+$table->unsignedBigInteger('usuario_id');
+$table->foreign('usuario_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');
+
+-- modelos a muchos
+
+public function modeloRelacionado()
+    {
+        return $this->hasMany(ModeloRelacionado::class, 'usuario_id');
+    }
+
+-- modelo a uno
+
+public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+-- crear controller api
+php artisan make:controller PostController --api
+
+
+-- ejemplo api
+
+// app/Http/Controllers/PostController.php
+
+namespace App\Http\Controllers;
+
+use App\Models\Post;
+use Illuminate\Http\Request;
+
+class PostController extends Controller
+{
+    // Traer todos los posts junto con el usuario que los creó
+    public function index()
+    {
+        $posts = Post::with('user')->get();
+        return response()->json($posts);
+    }
+
+    // Traer un post específico junto con el usuario que lo creó
+    public function show($id)
+    {
+        $post = Post::with('user')->find($id);
+
+        if (!$post) {
+            return response()->json(['message' => 'Post not found'], 404);
+        }
+
+        return response()->json($post);
+    }
+
+    // Guardar un nuevo post
+    public function store(Request $request)
+    {
+        $validatedData = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'user_id' => 'required|exists:users,id' // El ID del usuario que crea el post
+        ]);
+
+        $post = Post::create($validatedData);
+
+        return response()->json($post, 201);
+    }
+
+    // Actualizar un post existente
+    public function update(Request $request, $id)
+    {
+        $post = Post::find($id);
+
+        if (!$post) {
+            return response()->json(['message' => 'Post not found'], 404);
+        }
+
+        $validatedData = $request->validate([
+            'title' => 'string|max:255',
+            'content' => 'string',
+            'user_id' => 'exists:users,id' // Opcionalmente se puede cambiar el usuario
+        ]);
+
+        $post->update($validatedData);
+
+        return response()->json($post);
+    }
+
+    // Eliminar un post
+    public function destroy($id)
+    {
+        $post = Post::find($id);
+
+        if (!$post) {
+            return response()->json(['message' => 'Post not found'], 404);
+        }
+
+        $post->delete();
+
+        return response()->json(['message' => 'Post deleted successfully']);
+    }
+}
+
+
+-- rutas
+use App\Http\Controllers\PostController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('posts')->group(function () {
+    Route::get('/', [PostController::class, 'index']);           // Obtener todos los posts
+    Route::get('/{id}', [PostController::class, 'show']);        // Obtener un post específico
+    Route::post('/', [PostController::class, 'store']);          // Crear un nuevo post
+    Route::put('/{id}', [PostController::class, 'update']);      // Actualizar un post existente
+    Route::delete('/{id}', [PostController::class, 'destroy']);  // Eliminar un post
+});
+
+
+

@@ -1,0 +1,79 @@
+-- instalar laravel
+composer create-project --prefer-dist laravel/laravel nombre-del-proyecto "10.*"
+
+
+-- migraciones
+php artisan migrate
+
+php artisan migrate:rollback
+
+php artisan migrate:reset
+
+php artisan migrate:refresh
+
+-- instalar JWT
+composer require tymon/jwt-auth
+
+php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
+
+php artisan jwt:secret
+
+
+public function modeloRelacionado()
+    {
+        return $this->hasMany(ModeloRelacionado::class, 'usuario_id');
+    }
+
+public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims()
+    {
+        return [];
+    }
+
+
+config/auth en guards agregar
+'api' => [
+            'driver' => 'jwt', 
+            'provider' => 'users',
+	    'hash' => false,
+        ],
+
+JWT_TTL=60
+
+
+-- relación de uno
+public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+
+
+-- query
+$user = User::with(['posts' => function ($query) {
+    $query->select('id', 'user_id', 'title', 'content');
+}])->find($id);
+
+$user = User::with('posts')->find($id);
+
+-- o
+
+$users = User::with('posts')->get();
+
+-- Routas con parámetros
+Route::middleware(['auth:api'])->prefix('/biblioteca-galeria/albums')->group(function() {
+    Route::get('/listar/{biblioteca_galeria_id}', [BibliotecaAlbumController::class, 'listar']);
+    Route::post('/agregar', [BibliotecaAlbumController::class, 'agregar']);
+    Route::put('/actualizar/{id}', [BibliotecaAlbumController::class, 'actualizar']);
+    Route::delete('/eliminar/{id}', [BibliotecaAlbumController::class, 'eliminar']);
+});
+
+include base_path('routes/partials/bibliotecaGaleria.php');
+
+-- relaciones es la migraciones
+$table->unsignedBigInteger('usuario_id');
+$table->foreign('usuario_id')->references('id')->on('users')->onUpdate('cascade')->onDelete('cascade');

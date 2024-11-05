@@ -1,0 +1,6 @@
+laragon/bin/php/version/ext
+
+php.ini
+
+extension=php_pdo_sqlsrv
+extension=php_sqlsrv
